@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self';">
+    <title>Blackout - D-day Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 헤더 -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <span class="app-icon">📅</span>
+                    Blackout
+                </h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="addDdayBtn">
+                        <span class="icon">➕</span>
+                        새 D-day 추가
+                    </button>
+                    <button class="btn btn-secondary" id="settingsBtn">
+                        <span class="icon">⚙️</span>
+                        설정
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main-content">
+            <!-- D-day 목록이 없을 때 표시되는 영역 -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">📅</div>
+                <h2>아직 설정된 D-day가 없습니다</h2>
+                <p>첫 번째 D-day를 추가하여 시작해보세요!</p>
+                <button class="btn btn-primary btn-large" id="addFirstDdayBtn">
+                    <span class="icon">➕</span>
+                    첫 D-day 추가하기
+                </button>
+            </div>
+
+            <!-- D-day 카드 목록 -->
+            <div class="dday-grid" id="ddayGrid">
+                <!-- D-day 카드들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </main>
+
+        <!-- 푸터 -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <span class="version">v1.0.0</span>
+                <span class="separator">•</span>
+                <span class="copyright">© 2024 Blackout</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- D-day 추가/편집 모달 -->
+    <div class="modal-overlay" id="ddayModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">새 D-day 추가</h2>
+                <button class="btn-close" id="closeDdayModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="ddayForm">
+                    <div class="form-group">
+                        <label for="ddayTitle">제목</label>
+                        <input type="text" id="ddayTitle" name="title" placeholder="D-day 제목을 입력하세요" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ddayDate">목표 날짜</label>
+                        <input type="date" id="ddayDate" name="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ddayDescription">설명 (선택사항)</label>
+                        <textarea id="ddayDescription" name="description" placeholder="D-day에 대한 설명을 입력하세요" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="excludeWeekends" name="excludeWeekends">
+                            <span class="checkmark"></span>
+                            주말 제외
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ddayColor">색상</label>
+                        <div class="color-picker">
+                            <input type="color" id="ddayColor" name="color" value="#007bff">
+                            <div class="color-presets">
+                                <button type="button" class="color-preset" data-color="#007bff" style="background-color: #007bff;"></button>
+                                <button type="button" class="color-preset" data-color="#28a745" style="background-color: #28a745;"></button>
+                                <button type="button" class="color-preset" data-color="#dc3545" style="background-color: #dc3545;"></button>
+                                <button type="button" class="color-preset" data-color="#fd7e14" style="background-color: #fd7e14;"></button>
+                                <button type="button" class="color-preset" data-color="#6f42c1" style="background-color: #6f42c1;"></button>
+                                <button type="button" class="color-preset" data-color="#e83e8c" style="background-color: #e83e8c;"></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>개별 제외 날짜</label>
+                        <p class="field-description">이 D-day에만 적용되는 제외 날짜를 설정할 수 있습니다.</p>
+                        
+                        <div class="individual-exclude-dates-form">
+                            <div class="form-row">
+                                <input type="date" id="individualExcludeDate" placeholder="제외할 날짜">
+                                <input type="text" id="individualExcludeReason" placeholder="사유 (예: 개인휴가)">
+                                <button type="button" class="btn btn-secondary btn-small" id="addIndividualExcludeDateBtn">추가</button>
+                            </div>
+                        </div>
+                        
+                        <div class="individual-exclude-dates-list" id="individualExcludeDatesList">
+                            <!-- 개별 제외 날짜 목록이 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDdayModal">취소</button>
+                <button type="submit" form="ddayForm" class="btn btn-primary" id="saveDdayBtn">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>설정</h2>
+                <button class="btn-close" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>일반 설정</h3>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="globalExcludeWeekends">
+                            <span class="checkmark"></span>
+                            기본적으로 주말 제외
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="themeSelect">테마</label>
+                        <select id="themeSelect">
+                            <option value="system">시스템 설정 따르기</option>
+                            <option value="light">라이트</option>
+                            <option value="dark">다크</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>제외 날짜 관리</h3>
+                    <p class="section-description">휴일이나 특별한 날을 설정하여 D-day 계산에서 제외할 수 있습니다.</p>
+                    
+                    <div class="exclude-dates-form">
+                        <div class="form-row">
+                            <input type="date" id="excludeDate" placeholder="제외할 날짜">
+                            <input type="text" id="excludeReason" placeholder="사유 (예: 크리스마스)">
+                            <button type="button" class="btn btn-primary" id="addExcludeDateBtn">추가</button>
+                        </div>
+                    </div>
+                    
+                    <div class="exclude-dates-list" id="excludeDatesList">
+                        <!-- 제외 날짜 목록이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveSettingsBtn">설정 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 정보 모달 -->
+    <div class="modal-overlay" id="aboutModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Blackout 정보</h2>
+                <button class="btn-close" id="closeAboutModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="about-content">
+                    <div class="app-logo">📅</div>
+                    <h3>Blackout</h3>
+                    <p class="version">버전 1.0.0</p>
+                    <p class="description">
+                        현대적이고 직관적인 윈도우용 D-day 계산 앱입니다.<br>
+                        목표 날짜까지 남은 일수를 정확하게 계산하고 관리할 수 있습니다.
+                    </p>
+                    
+                    <div class="features">
+                        <h4>주요 기능</h4>
+                        <ul>
+                            <li>정확한 D-day 계산</li>
+                            <li>주말 제외 옵션</li>
+                            <li>특정 날짜 제외 기능</li>
+                            <li>현대적인 UI 디자인</li>
+                            <li>데이터 자동 저장</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="closeAboutModalBtn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 표시 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>로딩 중...</p>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html> 
